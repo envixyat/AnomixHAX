@@ -300,3 +300,67 @@ end)
 game:GetService("Players").PlayerRemoving:Connect(function(player)
     RemoveHighlightFromPlayer(player)
 end)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local Toggle = Tab:CreateToggle({
+    Name = "Player Detection (kicks you if a player is within 50 studs of you)",
+    CurrentValue = false,
+    Flag = "Toggle1",
+    Callback = function(Value)
+        if Value then
+            
+            StartProximityCheck()
+        else
+            
+            StopProximityCheck()
+        end
+    end,
+})
+
+local proximityChecking = false
+local proximityConnection
+
+
+function StartProximityCheck()
+    proximityChecking = true
+    proximityConnection = RunService.Heartbeat:Connect(function()
+        if proximityChecking then
+            CheckProximity()
+        end
+    end)
+end
+
+
+function StopProximityCheck()
+    proximityChecking = false
+    if proximityConnection then
+        proximityConnection:Disconnect()
+        proximityConnection = nil
+    end
+end
+
+
+function CheckProximity()
+    local localPlayer = Players.LocalPlayer
+    local character = localPlayer.Character
+    local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
+
+    if not humanoidRootPart then return end
+
+    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+        if otherPlayer ~= localPlayer then
+            local otherCharacter = otherPlayer.Character
+            local otherHumanoidRootPart = otherCharacter and otherCharacter:FindFirstChild("HumanoidRootPart")
+
+            if otherHumanoidRootPart then
+                local distance = (humanoidRootPart.Position - otherHumanoidRootPart.Position).magnitude
+                if distance <= 200 then
+                    
+                    localPlayer:Kick("Kicked due to a player being within 50 studs of you")
+                end
+            end
+        end
+    end
+end

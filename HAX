@@ -27,7 +27,7 @@ local Window = Rayfield:CreateWindow({
    },
    KeySystem = true,
    KeySettings = {
-      Title = "Untitled",
+      Title = "AnomicHAX",
       Subtitle = "Key System",
       Note = "Please join the DISCORD server to get the key: VsJkUVkKCw",
       FileName = "Key",

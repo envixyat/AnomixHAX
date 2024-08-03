@@ -1,13 +1,25 @@
+local DESIRED_GAME_ID = 4581966615
+
+local function isCorrectGame()
+    return game.PlaceId == DESIRED_GAME_ID
+end
+
+-- Exit the script if the game ID does not match
+if not isCorrectGame() then
+    warn("This script is not intended for this game. Exiting.")
+    return
+end
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "AnomicHAX",
    LoadingTitle = "AnomicHAX",
-   LoadingSubtitle = "by envixyat",
+   LoadingSubtitle = "by Anton",
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = nil,
-      FileName = "AAM"
+      FolderName = nil, -- Create a custom folder for your hub/game
+      FileName = "AnomicHAX"
    },
    Discord = {
       Enabled = false,
@@ -16,9 +28,9 @@ local Window = Rayfield:CreateWindow({
    },
    KeySystem = true, -- Set this to true to use our key system
    KeySettings = {
-      Title = "AnomicHAX",
+      Title = "Untitled",
       Subtitle = "Key System",
-      Note = "Please join our discord to get the key: VsJkUVkKCw",
+      Note = "Please join the DISCORD server to get the key: VsJkUVkKCw",
       FileName = "Key", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
       SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
       GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
@@ -26,7 +38,7 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
-local Tab = Window:CreateTab("Player", 4483362458) -- Title, Image
+local Tab = Window:CreateTab("Game", nil) -- Title, Image
 
 local Players = game:GetService("Players")
 
@@ -54,163 +66,302 @@ local Toggle = Tab:CreateToggle({
 })
 
 local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
 
--- Function to find the nearest player
-local function findNearestPlayer()
-    local localPlayer = Players.LocalPlayer
-    local nearestPlayer = nil
-    local shortestDistance = math.huge
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local distance = (localPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearestPlayer = player
-            end
+local Slider = Tab:CreateSlider({
+    Name = "Adjust FOV",
+    Range = {0, 120}, -- Typical FOV range for games
+    Increment = 1, -- Smaller increment for finer control
+    Suffix = "°", -- Degree symbol for clarity
+    CurrentValue = camera.FieldOfView, -- Start with the current FOV
+    Flag = "Slider1", -- A flag is the identifier for the configuration file
+    Callback = function(Value)
+        -- The function that takes place when the slider changes
+        -- The variable (Value) is a number which correlates to the value the slider is currently at
+        
+        if camera then
+            camera.FieldOfView = Value
         end
-    end
+    end,
+})
 
-    return nearestPlayer
-end
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character
+local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
 
--- Function to teleport to the nearest player
-local function teleportToNearestPlayer()
-    local localPlayer = Players.LocalPlayer
-    local nearestPlayer = findNearestPlayer()
-    if nearestPlayer and nearestPlayer.Character and nearestPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        localPlayer.Character.HumanoidRootPart.CFrame = nearestPlayer.Character.HumanoidRootPart.CFrame
-    end
-end
-
--- Create the button
 local Button = Tab:CreateButton({
-    Name = "Teleport to Nearest Player",
+    Name = "Teleport to Random Player",
     Callback = function()
-        teleportToNearestPlayer()
+        if humanoidRootPart then
+            -- Get a list of all players in the server
+            local allPlayers = Players:GetPlayers()
+            
+            -- Filter out the local player
+            local otherPlayers = {}
+            for _, otherPlayer in ipairs(allPlayers) do
+                if otherPlayer ~= player then
+                    table.insert(otherPlayers, otherPlayer)
+                end
+            end
+            
+            -- Check if there are any other players to teleport to
+            if #otherPlayers > 0 then
+                -- Select a random player
+                local randomIndex = math.random(1, #otherPlayers)
+                local randomPlayer = otherPlayers[randomIndex]
+                local randomCharacter = randomPlayer.Character
+                
+                if randomCharacter then
+                    local randomHumanoidRootPart = randomCharacter:FindFirstChild("HumanoidRootPart")
+                    if randomHumanoidRootPart then
+                        -- Teleport to the random player's HumanoidRootPart
+                        humanoidRootPart.CFrame = randomHumanoidRootPart.CFrame
+                    end
+                end
+            else
+                print("No other players available to teleport to.")
+            end
+        else
+            print("HumanoidRootPart not found.")
+        end
+    end,
+})
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character
+local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
+
+local Button = Tab:CreateButton({
+    Name = "Teleport to Closest Player",
+    Callback = function()
+        if humanoidRootPart then
+            local allPlayers = Players:GetPlayers()
+            local closestPlayer = nil
+            local shortestDistance = math.huge  -- Use a large number to ensure any distance will be smaller
+
+            -- Iterate through all players to find the closest one
+            for _, otherPlayer in ipairs(allPlayers) do
+                if otherPlayer ~= player then
+                    local otherCharacter = otherPlayer.Character
+                    if otherCharacter then
+                        local otherHumanoidRootPart = otherCharacter:FindFirstChild("HumanoidRootPart")
+                        if otherHumanoidRootPart then
+                            -- Calculate distance to the other player
+                            local distance = (humanoidRootPart.Position - otherHumanoidRootPart.Position).magnitude
+                            if distance < shortestDistance then
+                                shortestDistance = distance
+                                closestPlayer = otherPlayer
+                            end
+                        end
+                    end
+                end
+            end
+
+            -- Teleport to the closest player if one was found
+            if closestPlayer then
+                local closestCharacter = closestPlayer.Character
+                if closestCharacter then
+                    local closestHumanoidRootPart = closestCharacter:FindFirstChild("HumanoidRootPart")
+                    if closestHumanoidRootPart then
+                        humanoidRootPart.CFrame = closestHumanoidRootPart.CFrame
+                    end
+                end
+            else
+                print("No other players available to teleport to.")
+            end
+        else
+            print("HumanoidRootPart not found.")
+        end
+    end,
+})
+
+-- Function to get a random position within a given range and above the map
+local function getRandomPosition()
+    local function isAboveGround(position)
+        local ray = Ray.new(position + Vector3.new(0, 100, 0), Vector3.new(0, -200, 0))
+        local hitPart = workspace:FindPartOnRay(ray)
+        return hitPart and hitPart:IsA("Terrain")
+    end
+    
+    local randomPosition
+    repeat
+        local x = math.random(-1000, 1000)
+        local y = math.random(0, 500)  -- Adjust y to ensure it's above ground, if needed
+        local z = math.random(-1000, 1000)
+        randomPosition = Vector3.new(x, y, z)
+    until isAboveGround(randomPosition)
+    
+    return randomPosition
+end
+
+local Button = Tab:CreateButton({
+    Name = "Panic Button",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local newPosition = getRandomPosition()
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(newPosition)
+        end
     end,
 })
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer -- Assuming this script runs on the client
 
-local highlights = {}
+local Toggle = Tab:CreateToggle({
+   Name = "Follow the closest player",
+   CurrentValue = false,
+   Flag = "Toggle1", -- Ensure this flag is unique for configuration saving
+   Callback = function(Value)
+      if Value then
+         -- Start teleporting to the closest player
+         StartTeleporting()
+      else
+         -- Stop teleporting
+         StopTeleporting()
+      end
+   end,
+})
 
-local function highlightPlayers(enabled)
-    if enabled then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= Players.LocalPlayer and player.Character then
-                if not highlights[player] then
-                    local highlight = Instance.new("Highlight")
-                    highlight.Parent = player.Character
-                    highlights[player] = highlight
-                end
+local teleporting = false
+local teleportConnection
+
+-- Function to start teleporting to the closest player
+function StartTeleporting()
+   teleporting = true
+   teleportConnection = RunService.Heartbeat:Connect(function()
+      if teleporting then
+         TeleportToClosestPlayer()
+      end
+   end)
+end
+
+-- Function to stop teleporting
+function StopTeleporting()
+   teleporting = false
+   if teleportConnection then
+      teleportConnection:Disconnect()
+      teleportConnection = nil
+   end
+end
+
+-- Function to find and teleport to the closest player
+function TeleportToClosestPlayer()
+   local closestPlayer = nil
+   local shortestDistance = math.huge
+   local character = player.Character
+   local characterPosition = character and character:FindFirstChild("HumanoidRootPart") and character.HumanoidRootPart.Position
+
+   if not characterPosition then return end
+
+   for _, otherPlayer in ipairs(Players:GetPlayers()) do
+      if otherPlayer ~= player and otherPlayer.Character then
+         local otherCharacter = otherPlayer.Character
+         local otherPosition = otherCharacter:FindFirstChild("HumanoidRootPart") and otherCharacter.HumanoidRootPart.Position
+
+         if otherPosition then
+            local distance = (characterPosition - otherPosition).magnitude
+            if distance < shortestDistance then
+               closestPlayer = otherPlayer
+               shortestDistance = distance
             end
-        end
-    else
-        for player, highlight in pairs(highlights) do
-            if highlight then
-                highlight:Destroy()
-            end
-        end
-        highlights = {}
+         end
+      end
+   end
+
+   if closestPlayer and closestPlayer.Character then
+      local closestCharacter = closestPlayer.Character
+      local closestPosition = closestCharacter:FindFirstChild("HumanoidRootPart") and closestCharacter.HumanoidRootPart.Position
+      if closestPosition then
+         -- Teleport the player's character to the closest player's position
+         character:SetPrimaryPartCFrame(CFrame.new(closestPosition))
+      end
+   end
+end
+
+local Lighting = game:GetService("Lighting")
+
+local Slider = Tab:CreateSlider({
+   Name = "Time Editor",
+   Range = {0, 24}, -- Representing hours of a day
+   Increment = 1, -- Increment of 1 hour
+   Suffix = "Hours",
+   CurrentValue = 12, -- Default to midday
+   Flag = "Slider1", -- Ensure this flag is unique for configuration saving
+   Callback = function(Value)
+      -- Update the time of day in the Lighting service
+      SetTimeOfDay(Value)
+   end,
+})
+
+-- Function to set the time of day
+function SetTimeOfDay(hour)
+   -- Clamp the hour value to be within 0-24 range
+   local clampedHour = math.clamp(hour, 0, 24)
+   -- Convert the hour to a time string in "HH:MM:SS" format
+   local timeString = string.format("%02d:00:00", clampedHour)
+   -- Set the TimeOfDay property in Lighting
+   Lighting.TimeOfDay = timeString
+end
+
+-- Create a Highlight object for each player if it doesn’t already exist
+local function CreateHighlightForPlayer(player)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "PlayerHighlight"
+        highlight.Adornee = player.Character
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)  -- Red color for highlight
+        highlight.FillTransparency = 0.5
+        highlight.OutlineColor = Color3.fromRGB(255, 0, 0)  -- Red color for outline
+        highlight.OutlineTransparency = 0.5
+        highlight.Parent = player.Character
     end
 end
 
+-- Remove Highlight object from a player
+local function RemoveHighlightFromPlayer(player)
+    if player.Character then
+        local highlight = player.Character:FindFirstChild("PlayerHighlight")
+        if highlight then
+            highlight:Destroy()
+        end
+    end
+end
+
+-- Toggle callback
 local Toggle = Tab:CreateToggle({
     Name = "Highlight Players",
     CurrentValue = false,
     Flag = "Toggle1",
     Callback = function(Value)
-        highlightPlayers(Value)
-    end,
-})
+        -- Get all players in the game
+        local players = game:GetService("Players"):GetPlayers()
 
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function(character)
-        if Toggle.CurrentValue then
-            local highlight = Instance.new("Highlight")
-            highlight.Parent = character
-            highlights[player] = highlight
-        end
-    end)
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    if highlights[player] then
-        highlights[player]:Destroy()
-        highlights[player] = nil
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if Toggle.CurrentValue then
-        highlightPlayers(true)
-    end
-end)
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local infiniteHealthEnabled = false
-local connection
-
-local function setInfiniteHealth(enabled)
-    local player = Players.LocalPlayer
-    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-
-    if not humanoid then return end
-
-    if enabled then
-        humanoid.MaxHealth = math.huge
-        humanoid.Health = math.huge
-        connection = humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-            if humanoid.Health < humanoid.MaxHealth then
-                humanoid.Health = humanoid.MaxHealth
+        if Value then
+            -- Toggle is on, add highlight to all players
+            for _, player in ipairs(players) do
+                CreateHighlightForPlayer(player)
             end
-        end)
-    else
-        humanoid.MaxHealth = 100 -- or any default value you prefer
-        humanoid.Health = humanoid.MaxHealth
-        if connection then
-            connection:Disconnect()
-            connection = nil
+        else
+            -- Toggle is off, remove highlight from all players
+            for _, player in ipairs(players) do
+                RemoveHighlightFromPlayer(player)
+            end
         end
-    end
-end
-
--- Create the toggle
-local Toggle = Tab:CreateToggle({
-    Name = "Infinite Health",
-    CurrentValue = false,
-    Flag = "Toggle1",
-    Callback = function(Value)
-        infiniteHealthEnabled = Value
-        setInfiniteHealth(infiniteHealthEnabled)
     end,
 })
 
--- Ensure the infinite health is set correctly when character respawns
-Players.LocalPlayer.CharacterAdded:Connect(function(character)
-    if infiniteHealthEnabled then
-        setInfiniteHealth(true)
+-- Also handle new players joining or leaving
+game:GetService("Players").PlayerAdded:Connect(function(player)
+    if Toggle.CurrentValue then
+        CreateHighlightForPlayer(player)
     end
 end)
 
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-
-local Slider = Tab:CreateSlider({
-    Name = "FOV",
-    Range = {70, 120}, -- Reasonable range for FOV adjustments
-    Increment = 1,
-    Suffix = "°",
-    CurrentValue = Workspace.CurrentCamera.FieldOfView, -- Set default to current FOV
-    Flag = "Slider1", -- Ensure every element has a different flag if you're using configuration saving to avoid overlaps
-    Callback = function(Value)
-        -- The function that takes place when the slider changes
-        -- The variable (Value) is a number which correlates to the value the slider is currently at
-        Workspace.CurrentCamera.FieldOfView = Value
-    end,
-})
-
+game:GetService("Players").PlayerRemoving:Connect(function(player)
+    RemoveHighlightFromPlayer(player)
+end)

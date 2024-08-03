@@ -364,3 +364,56 @@ function CheckProximity()
         end
     end
 end
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local WalkSpeed = 10
+
+local Slider = Tab:CreateSlider({
+    Name = "Speed Changer",
+    Range = {0, 1000},
+    Increment = 10,
+    Suffix = "Speed",
+    CurrentValue = WalkSpeed,
+    Flag = "Slider1",
+    Callback = function(Value)
+        WalkSpeed = Value
+        print("WalkSpeed set to: " .. WalkSpeed)
+    end,
+})
+
+local moveDirection = Vector3.new(0, 0, 0)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.W then
+        moveDirection = Vector3.new(0, 0, -1)
+    elseif input.KeyCode == Enum.KeyCode.w then
+        moveDirection = Vector3.new(0, 0, -1)
+    elseif input.KeyCode == Enum.KeyCode.w then
+        moveDirection = Vector3.new(0, 0, -1)
+    elseif input.KeyCode == Enum.KeyCode.w then
+        moveDirection = Vector3.new(0, 0, -1)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.S or input.KeyCode == Enum.KeyCode.A or input.KeyCode == Enum.KeyCode.D then
+        moveDirection = Vector3.new(0, 0, 0)
+    end
+end)
+
+RunService.Heartbeat:Connect(function(deltaTime)
+    local localPlayer = Players.LocalPlayer
+    if not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    
+    if moveDirection.Magnitude > 0 then
+        local humanoidRootPart = localPlayer.Character.HumanoidRootPart
+        local moveVector = (humanoidRootPart.CFrame:VectorToWorldSpace(moveDirection)).Unit * WalkSpeed * deltaTime
+        humanoidRootPart.CFrame = humanoidRootPart.CFrame + moveVector
+        print("Moving with speed: " .. WalkSpeed)
+    end
+end)

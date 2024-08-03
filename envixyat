@@ -53,6 +53,8 @@ local Toggle = Tab:CreateToggle({
     end,
 })
 
+
+
 local Players = game:GetService("Players")
 
 -- Function to find the nearest player
@@ -214,3 +216,26 @@ local Slider = Tab:CreateSlider({
     end,
 })
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+local function SetVisibility(isVisible)
+    for _, v in ipairs(Character:GetChildren()) do
+        if v:IsA("BasePart") or v:IsA("Accessory") or v:IsA("Clothing") then
+            v.Transparency = isVisible and 0 or 1
+            if v:IsA("Accessory") and v:FindFirstChild("Handle") then
+                v.Handle.Transparency = isVisible and 0 or 1
+            end
+        end
+    end
+end
+
+local Toggle = Tab:CreateToggle({
+    Name = "Toggle Invisibility",
+    CurrentValue = false,
+    Flag = "Toggle1",
+    Callback = function(Value)
+        SetVisibility(not Value)
+    end,
+})
